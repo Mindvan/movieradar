@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { ThemeContext } from './ThemeContext';
 import type { ThemeType } from './ThemeContext';
+import { ConfigProvider, theme as antdTheme } from 'antd';
 
 const KEY_THEME = 'theme'
 
@@ -13,6 +14,7 @@ function defaultThemeValue() {
 
 const AppContext = ({children}: {children: ReactNode}) => {
     const [theme, setTheme] = useState<ThemeType>(defaultThemeValue);
+    const { darkAlgorithm, defaultAlgorithm } = antdTheme;
 
     // const toggleTheme = useCallback(() => {
     //     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
@@ -20,7 +22,13 @@ const AppContext = ({children}: {children: ReactNode}) => {
 
     return (
         <ThemeContext.Provider value={{theme, setTheme}}>
-            {children}
+            <ConfigProvider 
+                theme={{
+                algorithm: theme === 'dark' ? darkAlgorithm : defaultAlgorithm,
+            }}
+            >
+                {children}
+            </ConfigProvider>
         </ThemeContext.Provider>
     );
 };
