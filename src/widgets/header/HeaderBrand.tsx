@@ -1,12 +1,17 @@
-import { theme as antdTheme } from 'antd'
 import { SearchOutlined } from '@ant-design/icons'
+import { theme as antdTheme } from 'antd'
 
-export function HeaderBrand() {
+type HeaderBrandProps = {
+  onClick: () => void
+}
+
+export function HeaderBrand({ onClick }: HeaderBrandProps) {
   const { token } = antdTheme.useToken()
   const brandSize = token.fontSizeHeading4
 
   return (
     <span
+      onClick={onClick}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -14,6 +19,8 @@ export function HeaderBrand() {
         fontSize: brandSize,
         fontWeight: token.fontWeightStrong,
         color: token.colorText,
+        cursor: 'pointer',
+        userSelect: 'none',
       }}
     >
       <span

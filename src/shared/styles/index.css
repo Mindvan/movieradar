@@ -1,0 +1,156 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.ant-spin-container {
+    width: 100%;
+    max-width: 1280px;
+    margin-inline: auto;
+}
+
+.app-main-container {
+    width: 100%;
+    max-width: 1280px;
+    margin-inline: auto;
+}
+
+.movie-card-poster-wrap {
+    overflow: hidden;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.movie-card-poster {
+    display: block;
+    transition: transform 0.25s ease;
+    transform-origin: center;
+}
+
+.movie-card:hover .movie-card-poster {
+    transform: scale(1.05);
+}
+
+.show-hero {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    isolation: isolate;
+    min-height: 560px;
+}
+
+.show-hero::before {
+    content: "";
+    position: absolute;
+    inset: -20px;
+    background: inherit;
+    background-size: cover;
+    background-position: center;
+    transform: scale(1.2);
+    filter: blur(18px);
+    z-index: -2;
+}
+
+.show-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: -1;
+}
+
+.show-hero-overlay {
+    padding: 40px;
+    min-height: 560px;
+}
+
+.show-hero-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 24px;
+    align-items: center;
+    min-height: 100%;
+}
+
+.show-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 16px;
+}
+
+.show-poster-card .ant-card-cover img {
+    width: 100%;
+    display: block;
+    border-radius: 12px;
+}
+
+.show-poster-card {
+    border-radius: 12px;
+    overflow: hidden;
+    justify-self: end;
+}
+
+.episodes-carousel {
+    display: flex;
+    gap: 16px;
+    overflow-x: hidden;
+    padding-bottom: 8px;
+    scroll-behavior: smooth;
+    flex: 1;
+    min-width: 0;
+    width: auto;
+    max-width: 100%;
+}
+
+.episodes-carousel::-webkit-scrollbar {
+    height: 8px;
+}
+
+.episodes-carousel::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.45);
+    border-radius: 999px;
+}
+
+.episode-card {
+    flex: 0 0 340px;
+    scroll-snap-align: start;
+    height: 370px;
+    overflow: hidden;
+}
+
+.episode-card-image {
+    width: 100%;
+    height: 190px;
+    object-fit: cover;
+    display: block;
+}
+
+.episodes-carousel-shell {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+}
+
+@media (max-width: 900px) {
+    .show-hero-content {
+        grid-template-columns: 1fr;
+        align-items: start;
+    }
+
+    .show-hero,
+    .show-hero-overlay {
+        min-height: 0;
+    }
+
+    .show-meta-grid {
+        grid-template-columns: 1fr;
+    }
+}

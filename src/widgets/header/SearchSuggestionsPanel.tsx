@@ -1,8 +1,9 @@
 import { Empty, List, Typography, theme as antdTheme } from 'antd'
+import type { ShowType } from '../../entities/show/api/fetchData'
 
 type SearchSuggestionsPanelProps = {
   query: string
-  items: string[]
+  items: ShowType[]
 }
 
 export function SearchSuggestionsPanel({ query, items }: SearchSuggestionsPanelProps) {
@@ -31,8 +32,8 @@ export function SearchSuggestionsPanel({ query, items }: SearchSuggestionsPanelP
         <List
           size="small"
           split={false}
-          dataSource={items}
-          renderItem={(item, index) => (
+          dataSource={items.map((x) => x.show.name)}
+          renderItem={(item: string, index) => (
             <List.Item
               key={`${item}-${index}`}
               style={{
@@ -59,7 +60,7 @@ export function SearchSuggestionsPanel({ query, items }: SearchSuggestionsPanelP
         <Empty
           description={
             <Typography.Text type="secondary">
-              По запросу ничего не нашлось — попробуйте другие слова
+              Nothing found for this query
             </Typography.Text>
           }
           styles={{
