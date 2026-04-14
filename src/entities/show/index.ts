@@ -1,3 +1,3 @@
-export type { EpisodeType, ShowDetailsType, ShowType } from './api/fetchData'
-export { fetchData, fetchShowById, fetchShowsPage } from './api/fetchData'
+export type { EpisodeType, ShowCastType, ShowCrewType, ShowDetailsType, ShowType, WebScheduleItemType } from './api/fetchData'
+export { fetchData, fetchSchedule, fetchShowById, fetchShowsPage } from './api/fetchData'
 export { concatGenres } from './lib/concatGenres'

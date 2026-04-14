@@ -1,30 +1,24 @@
-import { Button, Card, Empty, Layout, Select, Spin, Typography, theme } from 'antd'
-import { LeftOutlined, RightOutlined } from '@ant-design/icons'
-import { useEffect, useMemo, useRef, useState, type WheelEvent } from 'react'
-import { useParams } from 'react-router-dom'
-import { concatGenres, fetchShowById, type EpisodeType, type ShowDetailsType } from '../entities/show'
+import { Empty, Layout, Spin, Typography, theme } from 'antd'
+import { useContext, useEffect, useMemo, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { fetchShowById, type ShowDetailsType } from '../entities/show'
+import { addRecentlyViewedShow } from '../entities/user'
+import { AuthContext } from '../app/providers/AuthContext'
+import { ShowCreditsSection } from '../widgets/show-page/ShowCreditsSection'
+import { ShowEpisodesSection } from '../widgets/show-page/ShowEpisodesSection'
+import { ShowHeroSection } from '../widgets/show-page/ShowHeroSection'
 
 const { Content } = Layout
-
-function stripHtml(html?: string) {
-  if (!html) return ''
-  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-}
-
-function formatEpisodeTitle(episode: EpisodeType) {
-  const season = episode.season ?? 0
-  const number = episode.number ?? 0
-  return `S${String(season).padStart(2, '0')}E${String(number).padStart(2, '0')}`
-}
 
 export function ShowPage() {
   const { token } = theme.useToken()
   const { id } = useParams()
+  const navigate = useNavigate()
+  const { authData, isAuthorized, toggleWatchLater, setMovieRating } = useContext(AuthContext)
   const [showData, setShowData] = useState<ShowDetailsType | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedSeason, setSelectedSeason] = useState<number>()
-  const episodesCarouselRef = useRef<HTMLDivElement | null>(null)
-  const metaTextStyle = { color: 'rgba(255,255,255,0.88)' }
+  const [ratingDraft, setRatingDraft] = useState(1)
 
   useEffect(() => {
     const showId = Number(id)
@@ -85,26 +79,46 @@ export function ShowPage() {
     return showData.show.episodes.filter((episode) => episode.season === selectedSeason)
   }, [showData, selectedSeason])
 
-  const scrollEpisodes = (direction: 'left' | 'right') => {
-    const container = episodesCarouselRef.current
-    if (!container) return
+  const inWatchLater = useMemo(() => {
+    if (!showData) return false
+    return authData?.watchLater.some((item) => item.showId === showData.show.id) ?? false
+  }, [authData, showData])
 
-    container.scrollBy({
-      left: direction === 'right' ? 360 : -360,
-      behavior: 'smooth',
-    })
-  }
+  const userRating = useMemo(() => {
+    if (!showData) return undefined
+    return authData?.ratedMovies.find((movie) => movie.showId === showData.show.id)?.rating
+  }, [authData, showData])
 
-  const handleEpisodesWheel = (event: WheelEvent<HTMLDivElement>) => {
-    if (!episodesCarouselRef.current) return
-    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return
+  const showMainInfo = useMemo(() => {
+    const year = showData?.show.premiered?.slice(0, 4) ?? 'Not specified'
+    const country = showData?.show.country ?? 'Not specified'
+    const language = showData?.show.language ?? 'Not specified'
+    return { year, country, language }
+  }, [showData])
 
-    event.preventDefault()
-    episodesCarouselRef.current.scrollBy({
-      left: event.deltaY,
-      behavior: 'auto',
-    })
-  }
+  const showRatingColor = useMemo(() => {
+    if (!showData?.show.rating) return 'rgba(255,255,255,0.88)'
+    if (showData.show.rating < 5) return '#ff6b6b'
+    if (showData.show.rating < 8) return '#ffd166'
+    return '#7CFC8A'
+  }, [showData])
+
+  useEffect(() => {
+    setRatingDraft(userRating ?? 1)
+  }, [userRating, showData])
+
+  useEffect(() => {
+    if (!showData) return
+    addRecentlyViewedShow(
+      {
+        showId: showData.show.id,
+        title: showData.show.name,
+        img: showData.show.img,
+        country: showData.show.country,
+      },
+      authData?.login,
+    )
+  }, [showData, authData?.login])
 
   return (
     <Content style={{ padding: token.paddingLG }}>
@@ -124,163 +138,44 @@ export function ShowPage() {
         </div>
       ) : showData ? (
         <div style={{ display: 'grid', gap: token.marginXL }}>
-          <section
-            className="show-hero"
-            style={{
-              backgroundImage: `url(${showData.show.img ?? 'https://placehold.co/1200x800?text=No+Poster'})`,
+          <ShowHeroSection
+            show={showData.show}
+            mainInfo={showMainInfo}
+            showRatingColor={showRatingColor}
+            ratingDraft={ratingDraft}
+            inWatchLater={inWatchLater}
+            onGenreClick={(genre) => navigate(`/?genre=${encodeURIComponent(genre)}`)}
+            onCountryClick={(country) => navigate(`/?country=${encodeURIComponent(country)}`)}
+            onRatingPreviewChange={setRatingDraft}
+            onRatingCommit={(nextRating) => {
+              setRatingDraft(nextRating)
+              if (!isAuthorized) {
+                navigate('/login')
+                return
+              }
+              setMovieRating(showData.show.id, showData.show.name, nextRating)
             }}
-          >
-            <div className="show-hero-overlay">
-              <div className="show-hero-content">
-                <div>
-                  <Typography.Title level={1} style={{ marginBottom: token.marginSM, color: token.colorWhite }}>
-                    {showData.show.name}
-                  </Typography.Title>
-                  <Typography.Paragraph style={{ color: 'rgba(255,255,255,0.88)' }}>
-                    {stripHtml(showData.show.summary) || 'Synopsis not specified'}
-                  </Typography.Paragraph>
-                  <div
-                    className="show-meta-grid"
-                    style={{ marginTop: token.marginXL, maxWidth: 680 }}
-                  >
-                    <Typography.Text style={metaTextStyle}>
-                      Genres: {showData.show.genres.length ? concatGenres(showData.show.genres) : 'Not specified'}
-                    </Typography.Text>
-                    <Typography.Text style={metaTextStyle}>
-                      Year of start: {showData.show.premiered?.slice(0, 4) ?? 'Not specified'}
-                    </Typography.Text>
-                    <Typography.Text style={metaTextStyle}>
-                      Country: {showData.show.country ?? 'Not specified'}
-                    </Typography.Text>
-                    <Typography.Text style={metaTextStyle}>
-                      Language: {showData.show.language ?? 'Not specified'}
-                    </Typography.Text>
-                    <Typography.Text style={metaTextStyle}>
-                      Status: {showData.show.status ?? 'Not specified'}
-                    </Typography.Text>
-                    <Typography.Text style={metaTextStyle}>
-                      Rating: {showData.show.rating ?? 'Not specified'}
-                    </Typography.Text>
-                    <Typography.Text style={metaTextStyle}>
-                      Network: {showData.show.network ?? 'Not specified'}
-                    </Typography.Text>
-                    <Typography.Text style={metaTextStyle}>
-                      {showData.show.scheduleDays.length
-                        ? `${showData.show.scheduleDays.join(', ')} ${showData.show.scheduleTime ?? ''}`
-                        : 'Not specified'}
-                    </Typography.Text>
-                  </div>
-                </div>
-                <Card
-                  className="show-poster-card"
-                  style={{ width: 320, minWidth: 320 }}
-                  styles={{ body: { display: 'none', padding: 0 } }}
-                  cover={
-                    <img
-                      src={showData.show.img ?? 'https://placehold.co/420x590?text=No+Poster'}
-                      alt={showData.show.name}
-                      style={{ width: '100%', aspectRatio: '420 / 590', objectFit: 'cover', display: 'block' }}
-                    />
-                  }
-                />
-              </div>
-            </div>
-          </section>
+            onToggleWatchLater={() => {
+              if (!isAuthorized) {
+                navigate('/login')
+                return
+              }
+              toggleWatchLater(showData.show.id, showData.show.name)
+            }}
+          />
 
-          <section>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: token.marginSM,
-                marginBottom: token.marginSM,
-              }}
-            >
-              <Typography.Title level={3} style={{ margin: 0 }}>
-                Episodes
-              </Typography.Title>
-              {seasonOptions.length > 0 && (
-                <Select
-                  value={selectedSeason}
-                  onChange={(value) => setSelectedSeason(value)}
-                  options={seasonOptions}
-                  style={{ minWidth: 180 }}
-                />
-              )}
-            </div>
-            {filteredEpisodes.length > 0 ? (
-              <div className="episodes-carousel-shell">
-                <Button
-                  type="default"
-                  shape="circle"
-                  icon={<LeftOutlined />}
-                  onClick={() => scrollEpisodes('left')}
-                />
-                <div
-                  ref={episodesCarouselRef}
-                  className="episodes-carousel"
-                  onWheel={handleEpisodesWheel}
-                >
-                  {filteredEpisodes.map((episode) => (
-                    <Card
-                      key={episode.id}
-                      className="episode-card"
-                      size="small"
-                      styles={{
-                        body: {
-                          height: 165,
-                          overflow: 'hidden',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: token.marginXXS,
-                        },
-                      }}
-                      cover={
-                        <img
-                          src={episode.img ?? 'https://placehold.co/320x180?text=No+Image'}
-                          alt={episode.name}
-                          className="episode-card-image"
-                        />
-                      }
-                    >
-                      <Typography.Text
-                        strong
-                        ellipsis={{ tooltip: `${formatEpisodeTitle(episode)} - ${episode.name}` }}
-                      >
-                        {formatEpisodeTitle(episode)} - {episode.name}
-                      </Typography.Text>
-                      <Typography.Text type="secondary">
-                        {episode.airdate ?? 'Unknown air date'}
-                        {episode.runtime ? ` • ${episode.runtime} min` : ''}
-                      </Typography.Text>
-                      {episode.summary && (
-                        <Typography.Paragraph
-                          style={{ marginBottom: 0 }}
-                          ellipsis={{ rows: 3, tooltip: stripHtml(episode.summary) }}
-                        >
-                          {stripHtml(episode.summary)}
-                        </Typography.Paragraph>
-                      )}
-                    </Card>
-                  ))}
-                </div>
-                <Button
-                  type="default"
-                  shape="circle"
-                  icon={<RightOutlined />}
-                  onClick={() => scrollEpisodes('right')}
-                />
-              </div>
-            ) : showData.show.episodes.length > 0 ? (
-              <Empty
-                description={<Typography.Text type="secondary">No episodes found for this season</Typography.Text>}
-              />
-            ) : (
-              <Empty
-                description={<Typography.Text type="secondary">No episodes found</Typography.Text>}
-              />
-            )}
-          </section>
+          <ShowEpisodesSection
+            seasonOptions={seasonOptions}
+            selectedSeason={selectedSeason}
+            onSeasonChange={setSelectedSeason}
+            filteredEpisodes={filteredEpisodes}
+            allEpisodesCount={showData.show.episodes.length}
+          />
+
+          <ShowCreditsSection
+            cast={showData.show.cast}
+            crew={showData.show.crew}
+          />
         </div>
       ) : (
         <Empty

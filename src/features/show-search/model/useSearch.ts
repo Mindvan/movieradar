@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { fetchData, fetchShowsPage, type ShowType } from '../../../entities/show/api/fetchData'
 
-export function useSearch(searchInput: string) {
+type SearchMode = 'name' | 'genre' | 'country' | null
+
+export function useSearch(searchInput: string, genreInput = '', countryInput = '') {
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [data, setData] = useState<ShowType[]>([])
   const [loading, setLoading] = useState(false)
@@ -9,6 +11,7 @@ export function useSearch(searchInput: string) {
   const [hasMore, setHasMore] = useState(false)
   const pageRef = useRef(0)
   const requestIdRef = useRef(0)
+  const modeRef = useRef<SearchMode>(null)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -28,7 +31,11 @@ export function useSearch(searchInput: string) {
 
     const load = async () => {
       const query = debouncedSearch.trim()
-      if (!query) {
+      const genreQuery = genreInput.trim().toLowerCase()
+      const countryQuery = countryInput.trim().toLowerCase()
+
+      if (!query && !genreQuery && !countryQuery) {
+        modeRef.current = null
         setLoading(false)
         setLoadingMore(false)
         setHasMore(false)
@@ -39,12 +46,44 @@ export function useSearch(searchInput: string) {
 
       setLoading(true)
       setLoadingMore(false)
-      pageRef.current = 1
+      pageRef.current = 0
       try {
-        const res = await fetchData(query, controller.signal)
+        if (query) {
+          modeRef.current = 'name'
+          pageRef.current = 1
+          const res = await fetchData(query, controller.signal)
+          if (isActive && requestIdRef.current === requestId) {
+            setData(res)
+            setHasMore(true)
+          }
+          return
+        }
+
+        modeRef.current = genreQuery ? 'genre' : 'country'
+        let firstBatch: ShowType[] = []
+        let reachedEnd = false
+        while (firstBatch.length === 0) {
+          const pageData = await fetchShowsPage(pageRef.current)
+          pageRef.current += 1
+
+          if (!isActive || requestIdRef.current !== requestId) return
+
+          if (pageData === null) {
+            reachedEnd = true
+            break
+          }
+
+          firstBatch = pageData.filter(({ show }) => {
+            if (genreQuery) {
+              return show.genres.some((genre) => genre.toLowerCase() === genreQuery)
+            }
+            return (show.country ?? '').toLowerCase() === countryQuery
+          })
+        }
+
         if (isActive && requestIdRef.current === requestId) {
-          setData(res)
-          setHasMore(true)
+          setData(firstBatch)
+          setHasMore(!reachedEnd)
         }
       } finally {
         if (isActive && requestIdRef.current === requestId) {
@@ -58,11 +97,13 @@ export function useSearch(searchInput: string) {
       isActive = false
       controller.abort()
     }
-  }, [debouncedSearch])
+  }, [debouncedSearch, genreInput, countryInput])
 
   const loadMore = async () => {
     const query = debouncedSearch.trim().toLowerCase()
-    if (!query || loading || loadingMore || !hasMore) return
+    const genreQuery = genreInput.trim().toLowerCase()
+    const countryQuery = countryInput.trim().toLowerCase()
+    if (loading || loadingMore || !hasMore) return
     const requestId = requestIdRef.current
 
     setLoadingMore(true)
@@ -83,7 +124,11 @@ export function useSearch(searchInput: string) {
           return
         }
 
-        const matched = pageData.filter(({ show }) => show.name.toLowerCase().includes(query))
+        const matched = modeRef.current === 'genre'
+          ? pageData.filter(({ show }) => show.genres.some((genre) => genre.toLowerCase() === genreQuery))
+          : modeRef.current === 'country'
+            ? pageData.filter(({ show }) => (show.country ?? '').toLowerCase() === countryQuery)
+          : pageData.filter(({ show }) => show.name.toLowerCase().includes(query))
         if (matched.length > 0) {
           const uniqueMatched = matched.filter(({ show }) => !existingIds.has(show.id))
           if (uniqueMatched.length > 0) {

@@ -21,6 +21,38 @@ export type EpisodeType = {
   img?: string
 }
 
+export type WebScheduleItemType = {
+  id: number
+  name: string
+  season?: number
+  number?: number
+  airdate?: string
+  airtime?: string
+  runtime?: number
+  summary?: string
+  img?: string
+  show: {
+    id: number
+    name: string
+    img?: string
+    country?: string
+  }
+}
+
+export type ShowCastType = {
+  personId: number
+  personName: string
+  characterName: string
+  personImg?: string
+}
+
+export type ShowCrewType = {
+  personId: number
+  personName: string
+  type: string
+  personImg?: string
+}
+
 export type ShowDetailsType = {
   show: ParsedShow & {
     summary?: string
@@ -34,6 +66,8 @@ export type ShowDetailsType = {
     scheduleDays: string[]
     scheduleTime?: string
     episodes: EpisodeType[]
+    cast: ShowCastType[]
+    crew: ShowCrewType[]
   }
 }
 
@@ -99,6 +133,109 @@ function parseEpisodes(x: unknown): EpisodeType[] {
     .filter((episode): episode is EpisodeType => episode !== null)
 }
 
+function parseScheduleData(data: unknown): WebScheduleItemType[] {
+  if (!Array.isArray(data)) return []
+
+  return data
+    .map((item): WebScheduleItemType | null => {
+      if (!isRecord(item)) return null
+      const show = isRecord(item.show)
+        ? item.show
+        : isRecord(item._embedded) && isRecord(item._embedded.show)
+          ? item._embedded.show
+          : null
+      if (!show) return null
+      if (
+        typeof item.id !== 'number' ||
+        typeof item.name !== 'string' ||
+        typeof show.id !== 'number' ||
+        typeof show.name !== 'string'
+      ) {
+        return null
+      }
+
+      return {
+        id: item.id,
+        name: item.name,
+        season: typeof item.season === 'number' ? item.season : undefined,
+        number: typeof item.number === 'number' ? item.number : undefined,
+        airdate: typeof item.airdate === 'string' ? item.airdate : undefined,
+        airtime: typeof item.airtime === 'string' ? item.airtime : undefined,
+        runtime: typeof item.runtime === 'number' ? item.runtime : undefined,
+        summary: typeof item.summary === 'string' ? item.summary : undefined,
+        img: isRecord(item.image) && typeof item.image.medium === 'string' ? item.image.medium : undefined,
+        show: {
+          id: show.id,
+          name: show.name,
+          img: isRecord(show.image) && typeof show.image.medium === 'string' ? show.image.medium : undefined,
+          country:
+            isRecord(show.network) && isRecord(show.network.country) && typeof show.network.country.name === 'string'
+              ? show.network.country.name
+              : isRecord(show.webChannel) &&
+                  isRecord(show.webChannel.country) &&
+                  typeof show.webChannel.country.name === 'string'
+                ? show.webChannel.country.name
+                : undefined,
+        },
+      }
+    })
+    .filter((item): item is WebScheduleItemType => item !== null)
+}
+
+function parseCast(x: unknown): ShowCastType[] {
+  if (!Array.isArray(x)) return []
+
+  return x
+    .map((item): ShowCastType | null => {
+      if (!isRecord(item) || !isRecord(item.person) || !isRecord(item.character)) return null
+      if (
+        typeof item.person.id !== 'number' ||
+        typeof item.person.name !== 'string' ||
+        typeof item.character.name !== 'string'
+      ) {
+        return null
+      }
+
+      return {
+        personId: item.person.id,
+        personName: item.person.name,
+        characterName: item.character.name,
+        personImg:
+          isRecord(item.person.image) && typeof item.person.image.medium === 'string'
+            ? item.person.image.medium
+            : undefined,
+      }
+    })
+    .filter((item): item is ShowCastType => item !== null)
+}
+
+function parseCrew(x: unknown): ShowCrewType[] {
+  if (!Array.isArray(x)) return []
+
+  return x
+    .map((item): ShowCrewType | null => {
+      if (!isRecord(item) || !isRecord(item.person)) return null
+      if (
+        typeof item.person.id !== 'number' ||
+        typeof item.person.name !== 'string' ||
+        typeof item.type !== 'string'
+      ) {
+        return null
+      }
+
+      return {
+        personId: item.person.id,
+        personName: item.person.name,
+        type: item.type,
+        personImg:
+          isRecord(item.person.image) && typeof item.person.image.medium === 'string'
+            ? item.person.image.medium
+            : undefined,
+      }
+    })
+    .filter((item): item is ShowCrewType => item !== null)
+}
+
 function getSearchShowFields(x: unknown): ShowType | null {
   if (!isRecord(x) || !('show' in x)) return null
   const parsedShow = parseShow(x.show)
@@ -146,11 +283,35 @@ export async function fetchShowsPage(page: number): Promise<ShowType[] | null> {
   }
 }
 
+export async function fetchSchedule(date?: string, country?: string): Promise<WebScheduleItemType[]> {
+  try {
+    const params = new URLSearchParams()
+    if (date) params.set('date', date)
+    if (country !== undefined) params.set('country', country)
+
+    const queryString = params.toString()
+    const response = await fetch(`https://api.tvmaze.com/schedule${queryString ? `?${queryString}` : ''}`)
+    if (!response.ok) return []
+    const result: unknown = await response.json()
+    return parseScheduleData(result)
+  } catch (e) {
+    console.error(e)
+    return []
+  }
+}
+
 export async function fetchShowById(id: number): Promise<ShowDetailsType | null> {
   try {
-    const response = await fetch(`https://api.tvmaze.com/shows/${id}?embed=episodes`)
-    if (!response.ok) return null
-    const result: unknown = await response.json()
+    const [showResponse, castResponse, crewResponse] = await Promise.all([
+      fetch(`https://api.tvmaze.com/shows/${id}?embed=episodes`),
+      fetch(`https://api.tvmaze.com/shows/${id}/cast`),
+      fetch(`https://api.tvmaze.com/shows/${id}/crew`),
+    ])
+    if (!showResponse.ok) return null
+
+    const result: unknown = await showResponse.json()
+    const castResult: unknown = castResponse.ok ? await castResponse.json() : []
+    const crewResult: unknown = crewResponse.ok ? await crewResponse.json() : []
     const parsedShow = parseShow(result)
     if (!parsedShow || !isRecord(result)) return null
 
@@ -160,6 +321,8 @@ export async function fetchShowById(id: number): Promise<ShowDetailsType | null>
         : []
 
     const episodes = isRecord(result._embedded) ? parseEpisodes(result._embedded.episodes) : []
+    const cast = parseCast(castResult)
+    const crew = parseCrew(crewResult)
 
     return {
       show: {
@@ -179,6 +342,8 @@ export async function fetchShowById(id: number): Promise<ShowDetailsType | null>
         scheduleTime:
           isRecord(result.schedule) && typeof result.schedule.time === 'string' ? result.schedule.time : undefined,
         episodes,
+        cast,
+        crew,
       },
     }
   } catch (e) {

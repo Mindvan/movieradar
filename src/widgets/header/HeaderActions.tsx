@@ -23,6 +23,7 @@ export function HeaderActions() {
 
   return (
     <Space size="large" align="center">
+      <Typography.Link onClick={() => navigate('/schedule')}>Schedule</Typography.Link>
       {isAuthorized ? (
         <>
           <Typography.Link onClick={() => navigate('/profile')}>My profile</Typography.Link>
@@ -31,8 +32,12 @@ export function HeaderActions() {
       ) : (
         <Typography.Link onClick={() => navigate('/login')}>Login</Typography.Link>
       )}
-      <Typography.Link onClick={toggleTheme}>
-        Theme: {themeName[themeValue]}
+      <Typography.Link
+        className={`header-theme-toggle header-theme-toggle--${themeValue}`}
+        onClick={toggleTheme}
+      >
+        <span className="header-theme-toggle__label">Theme</span>
+        <span className="header-theme-toggle__value">{themeName[themeValue]}</span>
       </Typography.Link>
     </Space>
   )

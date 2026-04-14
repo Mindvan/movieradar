@@ -1,8 +1,12 @@
-import { Card, Empty, Layout, List, Select, Spin, Typography, theme } from 'antd'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Empty, Layout, Select, Spin, Typography, theme } from 'antd'
+import { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useSearch } from '../features/show-search'
-import { concatGenres } from '../entities/show'
+import { fetchSchedule, type WebScheduleItemType } from '../entities/show'
+import { readRecentlyViewedShows, type RecentlyViewedShow } from '../entities/user'
+import { AuthContext } from '../app/providers/AuthContext'
+import { HomeDashboard } from '../widgets/show-list/HomeDashboard'
+import { ShowCatalogGrid } from '../widgets/show-list/ShowCatalogGrid'
 
 const { Content } = Layout
 const posterHeight = 320
@@ -12,14 +16,25 @@ type ShowListPageProps = {
   search: string
 }
 
+function currentDateIso() {
+  return new Date().toISOString().slice(0, 10)
+}
+
 export function ShowListPage({ search }: ShowListPageProps) {
   const { token } = theme.useToken()
   const navigate = useNavigate()
-  const { data, loading, loadingMore, hasMore, loadMore } = useSearch(search)
+  const location = useLocation()
+  const { isAuthorized, authData, toggleWatchLater } = useContext(AuthContext)
+  const genreFromUrl = useMemo(() => new URLSearchParams(location.search).get('genre')?.trim() ?? '', [location.search])
+  const countryFromUrl = useMemo(() => new URLSearchParams(location.search).get('country')?.trim() ?? '', [location.search])
+  const { data, loading, loadingMore, hasMore, loadMore } = useSearch(search, genreFromUrl, countryFromUrl)
   const trimmedSearch = search.trim()
-  const hasSearch = trimmedSearch.length > 0
+  const hasSearch = trimmedSearch.length > 0 || genreFromUrl.length > 0 || countryFromUrl.length > 0
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
   const [selectedGenres, setSelectedGenres] = useState<string[]>([])
+  const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedShow[]>([])
+  const [todaySchedule, setTodaySchedule] = useState<WebScheduleItemType[]>([])
+  const [todayScheduleLoading, setTodayScheduleLoading] = useState(false)
   const loadMoreTriggerRef = useRef<HTMLDivElement | null>(null)
 
   const countryOptions = useMemo(
@@ -64,6 +79,39 @@ export function ShowListPage({ search }: ShowListPageProps) {
       prevGenres.filter((genre) => genreOptions.some(({ value }) => value === genre)),
     )
   }, [hasSearch, countryOptions, genreOptions])
+
+  useEffect(() => {
+    if (!genreFromUrl) return
+    setSelectedGenres((prevGenres) => (prevGenres.includes(genreFromUrl) ? prevGenres : [...prevGenres, genreFromUrl]))
+  }, [genreFromUrl])
+
+  useEffect(() => {
+    if (!countryFromUrl) return
+    setSelectedCountries((prevCountries) =>
+      prevCountries.includes(countryFromUrl) ? prevCountries : [...prevCountries, countryFromUrl],
+    )
+  }, [countryFromUrl])
+
+  useEffect(() => {
+    setRecentlyViewed(readRecentlyViewedShows(authData?.login))
+  }, [authData?.login, location.key])
+
+  useEffect(() => {
+    let isActive = true
+    const loadTodaySchedule = async () => {
+      setTodayScheduleLoading(true)
+      const data = await fetchSchedule(currentDateIso(), 'RU')
+      if (isActive) {
+        setTodaySchedule(data.slice(0, 5))
+        setTodayScheduleLoading(false)
+      }
+    }
+    loadTodaySchedule()
+
+    return () => {
+      isActive = false
+    }
+  }, [])
 
   useEffect(() => {
     if (!hasSearch || loading || !hasMore) return
@@ -127,27 +175,14 @@ export function ShowListPage({ search }: ShowListPageProps) {
       )}
 
       {!hasSearch ? (
-        <div
-          style={{
-            minHeight: 280,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-            gap: token.marginXS,
-          }}
-        >
-          <Typography.Title level={1} style={{ marginBottom: token.marginXXS }}>
-            Welcome!
-          </Typography.Title>
-          <Typography.Text style={{ fontSize: token.fontSizeLG }}>
-            Welcome to MovieRadar, a React platform to check info of your favorite shows!
-          </Typography.Text>
-          <Typography.Text type="secondary">
-            (используется tvmazeAPI)
-          </Typography.Text>
-        </div>
+        <HomeDashboard
+          todayScheduleLoading={todayScheduleLoading}
+          todaySchedule={todaySchedule}
+          recentlyViewed={recentlyViewed}
+          cardWidth={cardWidth}
+          posterHeight={posterHeight}
+          onOpenShow={(showId) => navigate(`/show/${showId}`)}
+        />
       ) : loading ? (
         <div
           style={{
@@ -163,51 +198,15 @@ export function ShowListPage({ search }: ShowListPageProps) {
           <Typography.Text type="secondary">Loading...</Typography.Text>
         </div>
       ) : filteredData.length > 0 ? (
-        <List
-          grid={{ gutter: token.marginLG, xs: 1, sm: 2, md: 3, lg: 4 }}
-          dataSource={filteredData}
-          renderItem={({ show }) => (
-            <List.Item
-              key={show.id}
-              style={{ height: '100%', display: 'flex', justifyContent: 'center' }}
-            >
-              <Card
-                hoverable
-                className="movie-card"
-                onClick={() => navigate(`/show/${show.id}`)}
-                style={{ height: '100%', width: cardWidth }}
-                styles={{ body: { minHeight: 100 } }}
-                cover={
-                  <div className="movie-card-poster-wrap">
-                    <img
-                      className="movie-card-poster"
-                      src={show.img ?? 'https://placehold.co/210x295?text=No+Poster'}
-                      alt={show.name}
-                      style={{ width: cardWidth, height: posterHeight, objectFit: 'cover' }}
-                    />
-                  </div>
-                }
-              >
-                <Card.Meta
-                  title={<Typography.Text ellipsis={{ tooltip: show.name }}>{show.name}</Typography.Text>}
-                  description={
-                    <div>
-                      <Typography.Text
-                        type="secondary"
-                        ellipsis={{ tooltip: show.genres.join(', ') || 'Genre not specified' }}
-                      >
-                        {show.genres.length > 0 ? concatGenres(show.genres) : 'Genre not specified'}
-                      </Typography.Text>
-                      <br />
-                      <Typography.Text type="secondary" italic>
-                        {show.country ?? 'Country not specified'}
-                      </Typography.Text>
-                    </div>
-                  }
-                />
-              </Card>
-            </List.Item>
-          )}
+        <ShowCatalogGrid
+          data={filteredData}
+          cardWidth={cardWidth}
+          posterHeight={posterHeight}
+          authData={authData}
+          isAuthorized={isAuthorized}
+          onOpenShow={(showId) => navigate(`/show/${showId}`)}
+          onRequireLogin={() => navigate('/login')}
+          onToggleWatchLater={toggleWatchLater}
         />
       ) : (
         <Empty

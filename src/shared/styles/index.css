@@ -16,10 +16,76 @@
     margin-inline: auto;
 }
 
+.header-theme-toggle.ant-typography {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    font-size: 13px;
+    line-height: 1;
+}
+
+.header-theme-toggle__label {
+    opacity: 0.82;
+}
+
+.header-theme-toggle__value {
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+
+.header-theme-toggle--dark.ant-typography {
+    color: #e6f4ff !important;
+    border-color: rgba(125, 204, 255, 0.4);
+    background: linear-gradient(135deg, rgba(48, 60, 99, 0.45) 0%, rgba(34, 46, 78, 0.62) 100%);
+}
+
+.header-theme-toggle--dark.ant-typography:hover {
+    color: #ffffff !important;
+    border-color: rgba(140, 217, 255, 0.65);
+    box-shadow: 0 0 0 2px rgba(120, 191, 255, 0.22);
+}
+
+.header-theme-toggle--light.ant-typography {
+    color: #1f2a44 !important;
+    border-color: rgba(62, 103, 198, 0.35);
+    background: linear-gradient(135deg, rgba(121, 169, 255, 0.16) 0%, rgba(213, 231, 255, 0.75) 100%);
+}
+
+.header-theme-toggle--light.ant-typography:hover {
+    color: #14213f !important;
+    border-color: rgba(62, 103, 198, 0.55);
+    box-shadow: 0 0 0 2px rgba(62, 103, 198, 0.16);
+}
+
 .movie-card-poster-wrap {
+    position: relative;
     overflow: hidden;
     border-top-left-radius: 12px;
     border-top-right-radius: 12px;
+}
+
+.movie-card-watchlater-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    padding: 10px 12px 24px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.25) 65%, rgba(0, 0, 0, 0) 100%);
+}
+
+.movie-card-watchlater-label {
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.movie-card-watchlater-overlay .ant-checkbox + span {
+    color: #fff;
 }
 
 .movie-card-poster {
@@ -81,6 +147,63 @@
     gap: 8px 16px;
 }
 
+.show-genres-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.show-main-info-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.show-main-info-link {
+    appearance: none;
+    border: 0;
+    background: rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.95);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font: inherit;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.show-main-info-link:hover {
+    background: rgba(255, 255, 255, 0.24);
+}
+
+.show-genre-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 4px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.08) 100%);
+    backdrop-filter: blur(6px);
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 13px;
+}
+
+.show-genre-chip--clickable {
+    cursor: pointer;
+    font: inherit;
+}
+
+button.show-genre-chip--clickable {
+    appearance: none;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.08) 100%);
+}
+
+.show-genre-chip--clickable:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.12) 100%);
+}
+
 .show-poster-card .ant-card-cover img {
     width: 100%;
     display: block;
@@ -91,6 +214,37 @@
     border-radius: 12px;
     overflow: hidden;
     justify-self: end;
+}
+
+.show-rating-control {
+    width: min(340px, 50%);
+    min-width: 240px;
+    padding: 10px 12px 8px;
+    border-radius: 12px;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.08) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(6px);
+}
+
+.show-rating-slider.ant-slider {
+    margin-top: 10px;
+    margin-bottom: 4px;
+}
+
+.show-rating-slider .ant-slider-rail {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.show-rating-slider .ant-slider-track {
+    background: linear-gradient(90deg, #8e7dff 0%, #53c5ff 100%);
+}
+
+.show-rating-slider .ant-slider-handle::after {
+    width: 14px;
+    height: 14px;
+    inset-inline-start: -3px;
+    inset-block-start: -3px;
+    box-shadow: 0 0 0 2px rgba(142, 125, 255, 0.45);
 }
 
 .episodes-carousel {
@@ -139,6 +293,93 @@
     overflow: hidden;
 }
 
+.show-credits-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.show-people-strip {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.show-people-strip::-webkit-scrollbar {
+    height: 8px;
+}
+
+.show-people-strip::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.45);
+    border-radius: 999px;
+}
+
+.show-person-card {
+    min-width: 230px;
+    flex: 0 0 230px;
+    display: flex;
+    flex-direction: column;
+    height: 392px;
+}
+
+.show-person-card .ant-card-body {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.show-person-card-image {
+    display: block;
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    background: rgba(128, 128, 128, 0.2);
+}
+
+.show-person-card-content {
+    padding: 10px 12px 12px;
+    min-height: 92px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.schedule-card {
+    min-height: 195px;
+}
+
+.schedule-card .ant-card-body {
+    display: flex;
+    padding: 12px 12px 6px;
+}
+
+.schedule-card-image {
+    width: 240px;
+    height: 168px;
+    object-fit: cover;
+    display: block;
+    flex-shrink: 0;
+    border-radius: 8px;
+}
+
+.schedule-card-layout {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.schedule-card-content {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
 @media (max-width: 900px) {
     .show-hero-content {
         grid-template-columns: 1fr;
@@ -152,5 +393,23 @@
 
     .show-meta-grid {
         grid-template-columns: 1fr;
+    }
+
+    .show-rating-control {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .show-credits-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .schedule-card-layout {
+        flex-direction: column;
+    }
+
+    .schedule-card-image {
+        width: 100%;
+        height: 210px;
     }
 }
