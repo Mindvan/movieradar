@@ -218,12 +218,13 @@ export function HomeDashboard({
         )}
       </div>
 
-      {recentlyViewed.length > 0 && (
-        <div style={{ width: '100%', marginTop: token.marginLG }}>
-          <Typography.Title level={3} style={{ marginBottom: token.marginSM }}>
-            Recently viewed
-          </Typography.Title>
-          {isSliderMode && currentRecentSlide ? (
+      <div style={{ width: '100%', marginTop: token.marginLG }}>
+        <Typography.Title level={3} style={{ marginBottom: token.marginSM }}>
+          Recently viewed
+        </Typography.Title>
+        {recentlyViewed.length === 0 ? (
+          <Typography.Text type="secondary">Nothing recently viewed</Typography.Text>
+        ) : isSliderMode && currentRecentSlide ? (
             <div className="home-schedule-slider">
               <Button
                 shape="circle"
@@ -294,8 +295,7 @@ export function HomeDashboard({
               ))}
             </div>
           )}
-        </div>
-      )}
+      </div>
     </div>
   )
 }
