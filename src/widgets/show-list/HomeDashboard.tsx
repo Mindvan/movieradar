@@ -22,7 +22,7 @@ export function HomeDashboard({
   todayScheduleLoading,
   todaySchedule,
   recentlyViewed,
-  cardWidth,
+  cardWidth: _cardWidth,
   posterHeight,
   onOpenShow,
 }: HomeDashboardProps) {

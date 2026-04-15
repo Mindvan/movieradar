@@ -1,18 +1,20 @@
-import { Layout, theme } from 'antd'
+import { Layout, Spin, theme } from 'antd'
 import type { CSSProperties } from 'react'
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
-import { LoginPage } from '../pages/LoginPage'
-import { ProfilePage } from '../pages/ProfilePage'
-import { SchedulePage } from '../pages/SchedulePage'
 import { ShowListPage } from '../pages/ShowListPage'
-import { ShowPage } from '../pages/ShowPage'
 import { AppHeader } from '../widgets/header/index'
 import { AUTH_STORAGE_KEY, readAuthData, type AuthData } from '../entities/user'
 import { AuthContext } from './providers/AuthContext'
 import '../shared/styles/index.css'
 
-const { Footer } = Layout
+const { Content, Footer } = Layout
+
+const LoginPage = lazy(() => import('../pages/LoginPage').then((m) => ({ default: m.LoginPage })))
+const NotFoundPage = lazy(() => import('../pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })))
+const ProfilePage = lazy(() => import('../pages/ProfilePage').then((m) => ({ default: m.ProfilePage })))
+const SchedulePage = lazy(() => import('../pages/SchedulePage').then((m) => ({ default: m.SchedulePage })))
+const ShowPage = lazy(() => import('../pages/ShowPage').then((m) => ({ default: m.ShowPage })))
 const fixedHeaderHeight = 64
 const fixedFooterHeight = 56
 
@@ -116,25 +118,41 @@ function App() {
           setSearch={handleSearchChange}
           onHome={handleHome}
         />
-        <Routes>
-          <Route path="/" element={<ShowListPage search={search} />} />
-          <Route path="/show/:id" element={<ShowPage />} />
-          <Route path="/schedule" element={<SchedulePage />} />
-          <Route
-            path="/login"
-            element={<LoginPage isAuthorized={isAuthorized} onLoginSuccess={login} />}
-          />
-          <Route
-            path="/profile"
-            element={
-              authData ? (
-                <ProfilePage authData={authData} />
-              ) : (
-                <LoginPage isAuthorized={false} onLoginSuccess={login} />
-              )
-            }
-          />
-        </Routes>
+        <Suspense
+          fallback={
+            <Content
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                padding: token.paddingLG * 2,
+                minHeight: 240,
+              }}
+            >
+              <Spin size="large" />
+            </Content>
+          }
+        >
+          <Routes>
+            <Route path="/" element={<ShowListPage search={search} />} />
+            <Route path="/show/:id" element={<ShowPage />} />
+            <Route path="/schedule" element={<SchedulePage />} />
+            <Route
+              path="/login"
+              element={<LoginPage isAuthorized={isAuthorized} onLoginSuccess={login} />}
+            />
+            <Route
+              path="/profile"
+              element={
+                authData ? (
+                  <ProfilePage authData={authData} />
+                ) : (
+                  <LoginPage isAuthorized={false} onLoginSuccess={login} />
+                )
+              }
+            />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
         <Footer className="app-footer" style={footerStyle}>
           2026 Mindvan / Ivan Eroshin. Использованы данные из API REST TV Maze / Возможно, потребуется VPN
         </Footer>
