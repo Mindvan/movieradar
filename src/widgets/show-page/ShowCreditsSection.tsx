@@ -1,4 +1,5 @@
 import { Card, Typography } from 'antd'
+import type { WheelEvent } from 'react'
 import type { ShowCastType, ShowCrewType } from '../../entities/show'
 
 type ShowCreditsSectionProps = {
@@ -7,12 +8,23 @@ type ShowCreditsSectionProps = {
 }
 
 export function ShowCreditsSection({ cast, crew }: ShowCreditsSectionProps) {
+  const handlePeopleStripWheel = (event: WheelEvent<HTMLDivElement>) => {
+    const container = event.currentTarget
+    if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return
+
+    event.preventDefault()
+    container.scrollBy({
+      left: event.deltaY,
+      behavior: 'auto',
+    })
+  }
+
   return (
-    <section style={{ paddingInline: 40 }}>
+    <section className="show-credits-section">
       <div className="show-credits-grid">
         <Card title="Cast" size="small">
           {cast.length > 0 ? (
-            <div className="show-people-strip">
+            <div className="show-people-strip" onWheel={handlePeopleStripWheel}>
               {cast.map((item) => (
                 <Card key={`${item.personId}-${item.characterName}`} size="small" className="show-person-card">
                   <img
@@ -36,7 +48,7 @@ export function ShowCreditsSection({ cast, crew }: ShowCreditsSectionProps) {
 
         <Card title="Crew" size="small">
           {crew.length > 0 ? (
-            <div className="show-people-strip">
+            <div className="show-people-strip" onWheel={handlePeopleStripWheel}>
               {crew.map((item) => (
                 <Card key={`${item.personId}-${item.type}`} size="small" className="show-person-card">
                   <img

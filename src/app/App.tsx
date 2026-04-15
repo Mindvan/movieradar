@@ -1,4 +1,5 @@
 import { Layout, theme } from 'antd'
+import type { CSSProperties } from 'react'
 import { useEffect, useState } from 'react'
 import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { LoginPage } from '../pages/LoginPage'
@@ -95,16 +96,21 @@ function App() {
     })
   }
 
+  const layoutStyle = {
+    minHeight: '100vh',
+    background: token.colorBgLayout,
+    '--app-header-height': `${fixedHeaderHeight}px`,
+    '--app-footer-height': `${fixedFooterHeight}px`,
+  } as CSSProperties
+
+  const footerStyle = {
+    '--footer-bg': token.colorBgContainer,
+    '--footer-z': token.zIndexBase,
+  } as CSSProperties
+
   return (
     <AuthContext.Provider value={{ authData, isAuthorized, login, logout, toggleWatchLater, setMovieRating }}>
-      <Layout
-        style={{
-          minHeight: '100vh',
-          background: token.colorBgLayout,
-          paddingTop: fixedHeaderHeight,
-          paddingBottom: fixedFooterHeight,
-        }}
-      >
+      <Layout className="app-shell" style={layoutStyle}>
         <AppHeader
           search={search}
           setSearch={handleSearchChange}
@@ -129,20 +135,7 @@ function App() {
             }
           />
         </Routes>
-        <Footer
-          style={{
-            position: 'fixed',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: fixedFooterHeight,
-            display: 'flex',
-            alignItems: 'center',
-            textAlign: 'left',
-            background: token.colorBgContainer,
-            zIndex: 100,
-          }}
-        >
+        <Footer className="app-footer" style={footerStyle}>
           2026 Mindvan / Ivan Eroshin. Использованы данные из API REST TV Maze / Возможно, потребуется VPN
         </Footer>
       </Layout>

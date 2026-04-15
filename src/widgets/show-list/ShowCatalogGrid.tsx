@@ -38,7 +38,7 @@ export function ShowCatalogGrid({
             hoverable
             className="movie-card"
             onClick={() => onOpenShow(show.id)}
-            style={{ height: '100%', width: cardWidth }}
+            style={{ height: '100%', width: '100%', maxWidth: cardWidth }}
             styles={{
               body: {
                 minHeight: 100,

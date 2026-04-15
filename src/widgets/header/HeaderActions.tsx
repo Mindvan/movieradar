@@ -1,44 +1,93 @@
-import { Space, Typography } from 'antd'
-import { useContext } from 'react'
-import { KEY_THEME } from '../../app/providers/AppProvider'
+import { MenuOutlined } from '@ant-design/icons'
+import { Button, Drawer, Space, Typography } from 'antd'
+import { useContext, useEffect, useState } from 'react'
 import { AuthContext } from '../../app/providers/AuthContext'
-import { ThemeContext, type ThemeContextType, type ThemeType } from '../../app/providers/ThemeContext'
 import { useNavigate } from 'react-router-dom'
-
-const themeName: Record<ThemeType, string> = {
-  dark: 'Dark',
-  light: 'Light',
-}
 
 export function HeaderActions() {
   const navigate = useNavigate()
   const { isAuthorized, logout } = useContext(AuthContext)
-  const { theme: themeValue, setTheme } = useContext<ThemeContextType>(ThemeContext)
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.innerWidth <= 900
+  })
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
-  function toggleTheme() {
-    const value = themeValue === 'dark' ? 'light' : 'dark'
-    localStorage.setItem(KEY_THEME, value)
-    setTheme(value)
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 900)
+    }
+
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const goTo = (path: string) => {
+    navigate(path)
+    setDrawerOpen(false)
   }
 
-  return (
-    <Space size="large" align="center">
-      <Typography.Link onClick={() => navigate('/schedule')}>Schedule</Typography.Link>
+  const handleLogout = () => {
+    logout()
+    setDrawerOpen(false)
+  }
+
+  const desktopLinks = (
+    <>
       {isAuthorized ? (
         <>
           <Typography.Link onClick={() => navigate('/profile')}>My profile</Typography.Link>
+          <Typography.Link onClick={() => navigate('/schedule')}>Schedule</Typography.Link>
           <Typography.Link onClick={logout}>Log out</Typography.Link>
         </>
       ) : (
-        <Typography.Link onClick={() => navigate('/login')}>Login</Typography.Link>
+        <>
+          <Typography.Link onClick={() => navigate('/schedule')}>Schedule</Typography.Link>
+          <Typography.Link onClick={() => navigate('/login')}>Login</Typography.Link>
+        </>
       )}
-      <Typography.Link
-        className={`header-theme-toggle header-theme-toggle--${themeValue}`}
-        onClick={toggleTheme}
-      >
-        <span className="header-theme-toggle__label">Theme</span>
-        <span className="header-theme-toggle__value">{themeName[themeValue]}</span>
-      </Typography.Link>
+    </>
+  )
+
+  const mobileLinks = (
+    <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+      {isAuthorized ? (
+        <>
+          <Typography.Link onClick={() => goTo('/profile')}>My profile</Typography.Link>
+          <Typography.Link onClick={() => goTo('/schedule')}>Schedule</Typography.Link>
+          <Typography.Link onClick={handleLogout}>Log out</Typography.Link>
+        </>
+      ) : (
+        <>
+          <Typography.Link onClick={() => goTo('/schedule')}>Schedule</Typography.Link>
+          <Typography.Link onClick={() => goTo('/login')}>Login</Typography.Link>
+        </>
+      )}
     </Space>
   )
+
+  if (isMobile) {
+    return (
+      <>
+        <Button
+          type="text"
+          icon={<MenuOutlined />}
+          aria-label="Open navigation menu"
+          className="header-menu-button"
+          onClick={() => setDrawerOpen(true)}
+        />
+        <Drawer
+          title="Menu"
+          placement="right"
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+        >
+          {mobileLinks}
+        </Drawer>
+      </>
+    )
+  }
+
+  return <Space size="middle" align="center" className="header-actions">{desktopLinks}</Space>
 }

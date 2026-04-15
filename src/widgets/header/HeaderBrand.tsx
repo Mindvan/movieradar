@@ -1,5 +1,6 @@
 import { SearchOutlined } from '@ant-design/icons'
 import { theme as antdTheme } from 'antd'
+import type { CSSProperties } from 'react'
 
 type HeaderBrandProps = {
   onClick: () => void
@@ -7,23 +8,26 @@ type HeaderBrandProps = {
 
 export function HeaderBrand({ onClick }: HeaderBrandProps) {
   const { token } = antdTheme.useToken()
-  const brandSize = token.fontSizeHeading4
+  const brandStyle = {
+    '--brand-size': `${token.fontSizeHeading4}px`,
+    display: 'inline-flex',
+    alignItems: 'center',
+    columnGap: token.marginXS,
+    fontWeight: token.fontWeightStrong,
+    color: token.colorText,
+    cursor: 'pointer',
+    userSelect: 'none',
+  } as CSSProperties
 
   return (
     <span
       onClick={onClick}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        columnGap: token.marginXS,
-        fontSize: brandSize,
-        fontWeight: token.fontWeightStrong,
-        color: token.colorText,
-        cursor: 'pointer',
-        userSelect: 'none',
-      }}
+      className="header-brand"
+      style={brandStyle}
+      aria-label="MovieRadar"
     >
       <span
+        className="header-brand__icon"
         style={{
           display: 'inline-flex',
           lineHeight: 0,
@@ -32,7 +36,7 @@ export function HeaderBrand({ onClick }: HeaderBrandProps) {
       >
         <SearchOutlined style={{ fontSize: '1em', color: token.colorPrimary }} />
       </span>
-      <span style={{ lineHeight: 1 }}>MovieRadar</span>
+      <span className="header-brand__text" style={{ lineHeight: 1 }}>MovieRadar</span>
     </span>
   )
 }

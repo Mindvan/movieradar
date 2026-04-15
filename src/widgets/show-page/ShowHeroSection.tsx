@@ -48,7 +48,7 @@ export function ShowHeroSection({
             <Typography.Title level={1} style={{ marginBottom: token.marginSM, color: token.colorWhite }}>
               {show.name}
             </Typography.Title>
-            <Typography.Paragraph style={{ color: 'rgba(255,255,255,0.88)' }}>
+            <Typography.Paragraph className="show-synopsis" style={{ color: 'rgba(255,255,255,0.88)' }}>
               {stripHtml(show.summary) || 'Synopsis not specified'}
             </Typography.Paragraph>
             <div style={{ marginTop: token.marginLG, maxWidth: 680 }}>
@@ -86,6 +86,7 @@ export function ShowHeroSection({
                 <Typography.Text style={metaTextStyle}>{mainInfo.language}</Typography.Text>
               </div>
               <Typography.Text
+                      className="show-main-rating"
                 style={{
                   display: 'block',
                   marginTop: token.marginSM,

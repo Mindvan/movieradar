@@ -46,6 +46,7 @@ export function ShowEpisodesSection({
   return (
     <section>
       <div
+        className="show-episodes-header"
         style={{
           display: 'flex',
           alignItems: 'center',

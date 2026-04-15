@@ -1,7 +1,9 @@
 import { Layout, theme as antdTheme } from 'antd'
+import type { CSSProperties } from 'react'
 import { HeaderActions } from './HeaderActions'
 import { HeaderBrand } from './HeaderBrand'
 import { HeaderSearchBar } from './HeaderSearchBar'
+import { HeaderThemeToggle } from './HeaderThemeToggle'
 
 const { Header } = Layout
 
@@ -13,31 +15,22 @@ type AppHeaderProps = {
 
 export function AppHeader({ search, setSearch, onHome }: AppHeaderProps) {
   const { token } = antdTheme.useToken()
+  const headerStyle = {
+    '--header-bg': token.colorBgContainer,
+    '--header-border': token.colorBorderSecondary,
+    '--header-z': token.zIndexPopupBase,
+  } as CSSProperties
 
   return (
-    <Header
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        width: '100%',
-        zIndex: token.zIndexPopupBase,
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1fr) minmax(320px, 520px) minmax(0, 1fr)',
-        alignItems: 'center',
-        columnGap: token.paddingMD,
-        paddingInline: token.paddingLG,
-        background: token.colorBgContainer,
-        borderBottom: `1px solid ${token.colorBorderSecondary}`,
-        lineHeight: 1,
-      }}
-    >
-      <div style={{ justifySelf: 'start' }}>
-        <HeaderBrand onClick={onHome} />
+    <Header className="app-header" style={headerStyle}>
+      <div className="app-header__brand">
+        <div className="app-header__brand-inner">
+          <HeaderBrand onClick={onHome} />
+          <HeaderThemeToggle />
+        </div>
       </div>
       <HeaderSearchBar search={search} setSearch={setSearch} />
-      <div style={{ justifySelf: 'end' }}>
+      <div className="app-header__actions">
         <HeaderActions />
       </div>
     </Header>
